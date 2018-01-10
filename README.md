@@ -4,7 +4,7 @@
 [Eric Lippert](https://ericlippert.com/) wrote an [article series called Wizards and Warriors](https://ericlippert.com/2015/04/27/wizards-and-warriors-part-one/)
 introducing a problem in Object Orientated Programming that seems simple at first glance but quickly reveals itself to be
 a complicated software engineering. I found the article very thought-provoking.
-It inspired me to write this related work and code that implements the rule system as proposed by Eric, as well as a simple demonstration that uses this system in a simple text adventure with two scenes.
+It inspired me to write this related work and code that [implements the rule system](https://devbridie.github.io/wizardsandwarriors/docs/com.devbridie.wizardsandwarriors.framework/) as proposed by Eric, as well as a [simple demonstration that uses this system](https://github.com/devbridie/wizardsandwarriors/blob/master/sample/src/main/kotlin/com/devbridie/wizardsandwarriors/sample/Main.kt) in a simple text adventure with two scenes. You can find the completed code [on GitHub](https://github.com/devbridie/wizardsandwarriors).
 
 ## Introduction
 
