@@ -214,7 +214,7 @@ With this, the initial goal was completed.
 
 ### Extensions
 Suppose I were a user of the framework: what features would I want? In context of game development, I immediately
-thought of expansion packs: What if `Paladin`s were added to the game? How could this new type of person and other related logic
+thought of expansion packs: What if a new class called Paladin were added to the game, Wizards and Warriors + Paladins? How could this new type of person and other related logic
 be added to the system without disturbing existing logic?
 
-For this, being able to nest rulebooks became a vital feature.
+For this, being able to nest rulebooks became a vital feature. In this way, related logic (What are Paladins allowed to wield? What special effects do they have when attacking?) can be kept together and added as one unit to an existing rulebook.
