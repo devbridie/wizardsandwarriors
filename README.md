@@ -123,16 +123,18 @@ Eric proposes that the actual business logic is the following:
 As I was curious to see how such a system could be implemented and used, I set out to create a framework utilizing these ideas.
 
 ## Implementation
-I started with a simple goal in mind: implement the example of Wizards and Warriors wielding Staffs, Swords, and Daggers.
+I started with a simple goal in mind: implement the example game of Wizards and Warriors wielding Staffs, Swords, and Daggers. Using the [Inform7](http://inform7.com/) rules as in [part 5](https://ericlippert.com/2015/05/11/wizards-and-warriors-part-five/) as a starting point of what I would want the API to become.
 
-This would start with a generic representation of a Rule, Effect, State, and System.
-A Rule would be applicable in some contexts, called Parameters in context of a Command, and would result in some Effect.
-A System would be the glue of the framework, knowing which Rules are involved in this system, handling commands and interpreting the obtained Effects.
+### Core Representation
+The representation of the functionality that should be implemented would contain the following nouns: *Rule*, *Parameter*, *Effect*, *State*, and *System*.
 
-Then, work began on the WieldRules, using the [Inform7](http://inform7.com/) rules as in the article as a starting point of what I would want the API to become.
-However, I wanted to create rules that are type-safe and use a fluent DSL to express them. Kotlin is apt for this using their [Type-Safe Builders](https://kotlinlang.org/docs/reference/type-safe-builders.html).
+* A *Rule* is a small chunk of business logic. A rule is given some *Parameter*s and results in some *Effect*.
+* A *System* is the glue of the framework. It knows which *Rule*s exist, it handles commands, and it handles the resulting Effects. It also maintains a given *State*, dispatching mutations to this state where needed.
 
-I separated rules that represented definitions into Classes. An example of this is the following:
+These resulted in [the rule framework](https://github.com/devbridie/wizardsandwarriors/tree/master/framework/src/main/kotlin/com/devbridie/wizardsandwarriors/framework).
+
+### Representing State
+I separated rules that represented definitions into classes. An example of this is the following:
 
 ```Inform7
 A wizard is a kind of person.
@@ -149,49 +151,70 @@ object Wizard : PersonType("Wizard")
 object Warrior : PersonType("Warrior")
 ```
 
-With the game models defined, work could begin on the rules. The notion of wielding a weapon concerns two instances:
-The wielder and the weapon being wielded. Then, abstractly, the applicability of this rule `Wielding a sword: if the wielder is not a warrior, it is too heavy.`
-could be expressed as `weapon is Sword && wielder.type !is Warrior`. The effect of this rule would be `WeaponTooHeavyEffect`.
-This leads to the composition of the rule expressed in the following DSL:
+In context of the game, these object definitions can be found in [sample objects](https://github.com/devbridie/wizardsandwarriors/tree/master/sample/src/main/kotlin/com/devbridie/wizardsandwarriors/sample/models).
+
+### Creating a WieldRule
+A concrete implementation of such a Rule is a [`WieldRule`](https://github.com/devbridie/wizardsandwarriors/blob/master/sample/src/main/kotlin/com/devbridie/wizardsandwarriors/sample/wield/WieldRulebook.kt). It will express what the effects of a command for a '`Person` to wield a `Weapon`' should be.
+
+The notion of wielding a weapon concerns two instances: The wielder and the weapon being wielded. 
+Then, abstractly, the applicability of the rule `When wielding a sword: if the wielder is not a warrior, it is too heavy.`
+could be expressed as `weapon is Sword && wielder.type !is Warrior`. The effect of this rule would be `WeaponTooHeavyWieldEffect`.
+This leads to the composition of the rule expressed in the following DSL [Type-Safe Builders](https://kotlinlang.org/docs/reference/type-safe-builders.html).:
 
 ```kotlin
-val wieldRules = rules<WieldParameters, WieldEffect> {
-    +wieldRule(
-            applicable = { weapon is Sword && person.type !is Warrior },
-            effect = { WeaponTooHeavyWieldEffect }
-    )
-}
+wieldRule(
+    applicable = { weapon is Sword && person.type !is Warrior },
+    effect = { WeaponTooHeavyWieldEffect }
+)
 ```
 
-And the normal case of wielding a weapon:
+And the 'normal' case of wielding a weapon:
 
 ```kotlin
-val wieldRules = rules<WieldParameters, WieldEffect> {
-    +wieldRule(
-            applicable = always(),
-            effect = { UpdateWeaponWieldEffect(this) }
-    )
-}
+wieldRule(
+    applicable = always(),
+    effect = { UpdateWeaponWieldEffect(this) }
+)
 ```
 
-where `this` refers to the incoming WieldParameters. This effect leads to a mutation of game state (MutateStateEffect).
+where `this` refers to the incoming `WieldParameter`s. The resolution of this Rule leads to an Effect that represents a `Wizard` wielding a `Staff`.
 
+### Rule Resolution
 However, resolution of these rules was not as simple as thought. Some Rules should be final in their chain;
-if one rule dictates that a weapon may not be wielded, the default rule (wield the weapon) should not be resolved.
-This led to the introduction of the BreakChainEffect.
+if one rule dictates that a `Wizard` may not wield a `Sword`, the default rule (wield the weapon) should not be resolved.
+This led to the introduction of the `BreakChainEffect`, a tag that determines that no further rules should be resolved.
 
-Creative thinking led to the narrative shown in the main method, demonstrating the basics of the rule system.
-The text displayed is a result of composition of effects: `WieldEffect -> DisplayWieldEffectEffect`.
-This allows the business logic (A warrior cannot wield a staff) to remain context-independent.
+[Rule resolution](https://github.com/devbridie/wizardsandwarriors/blob/90ffa9d4a9c12b3f4cfbdd2f7349db90f6b8ff4e/framework/src/main/kotlin/com/devbridie/wizardsandwarriors/framework/System.kt#L39) is done with using a modified functional reduce, mapping applicable Rules to Effects. When a `BreakChainEffect` is encountered, the reduce is stopped.
+
+### Stengths of the Implementation
+The flexibility of the framework allows for arbitrarily complex rules and effects. 
+
+Effects can be composed by creating Rules that take an Effect as Parameter. An example of this is displaying the result of a wield command: `WieldEffect -> DisplayWieldEffectEffect`. In the context of a certain scene, a wield might result in a diffrerent display text. This allows the business logic (A warrior cannot wield a staff) to remain context-independent.
+
+Rule composition can be created by creating new rules that combine other rules. An example of this is a conditional group that makes rules more specific:
+
+```kotlin
+conditional({ wieldParameters.person.type is Wizard }) {
+	+shopSceneRule(
+		applicable = { wieldEffect is UpdateWeaponWieldEffect && wieldParameters.weapon is Staff },
+		effect = { DisplayWieldEffectEffect("${wieldParameters.person} looks satisfied with his new ${wieldParameters.weapon}.") }
+	)
+
+	+shopSceneRule(
+		applicable = { wieldEffect is UpdateWeaponWieldEffect && wieldParameters.weapon is Dagger },
+		effect = { DisplayWieldEffectEffect("${wieldParameters.person} takes the ${wieldParameters.weapon} begrudgingly.") }
+	)
+}
+```
+
+### Demonstration
+Creative thinking led to the narrative shown in the [demonstration](https://github.com/devbridie/wizardsandwarriors/blob/master/sample/src/main/kotlin/com/devbridie/wizardsandwarriors/sample/Main.kt), demonstrating the basics of the rule system.
 
 With this, the initial goal was completed.
 
-### Extension
-#### Becoming a user
+### Extensions
 Suppose I were a user of the framework: what features would I want? In context of game development, I immediately
-thought of expansion packs: What if `Paladin`s were added to the game? How could this new class and their related logic
+thought of expansion packs: What if `Paladin`s were added to the game? How could this new type of person and other related logic
 be added to the system without disturbing existing logic?
 
-By allowing rulebooks to be composed, this can be incorporated into the system.
-Also, it quickly became clear that repetition of applicability should somehow be avoided: I created a
-`conditional` group that applies a given `isApplicable` to a group of Rules.
+For this, being able to nest rulebooks became a vital feature.
