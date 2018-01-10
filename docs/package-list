@@ -1,0 +1,10 @@
+$dokka.format:gfm
+$dokka.linkExtension:md
+
+com.devbridie.wizardsandwarriors.dsl
+com.devbridie.wizardsandwarriors.framework
+com.devbridie.wizardsandwarriors.sample
+com.devbridie.wizardsandwarriors.sample.attack
+com.devbridie.wizardsandwarriors.sample.demo
+com.devbridie.wizardsandwarriors.sample.models
+com.devbridie.wizardsandwarriors.sample.wield

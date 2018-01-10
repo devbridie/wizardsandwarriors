@@ -1,0 +1,7 @@
+group = "com.devbridie.wizardsandwarriors.sample"
+version = "1.0-SNAPSHOT"
+
+dependencies {
+    compile project(":framework")
+    compile project(":dsl")
+}

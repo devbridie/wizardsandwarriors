@@ -1,0 +1,6 @@
+rootProject.name = 'wizardsandwarriors'
+rootProject.buildFileName = 'build.gradle'
+
+include 'framework'
+include 'dsl'
+include 'sample'
