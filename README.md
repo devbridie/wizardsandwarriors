@@ -195,20 +195,3 @@ be added to the system without disturbing existing logic?
 By allowing rulebooks to be composed, this can be incorporated into the system.
 Also, it quickly became clear that repetition of applicability should somehow be avoided: I created a
 `conditional` group that applies a given `isApplicable` to a group of Rules.
-
-## Reflection
-Though I have been interested in creating Software Engineering write-ups for a some time, I could not
-find a topic I was sufficiently interested in. This has been great practice, but in the future I would like to
-write something more substantial than a summary, implementation journey, and reflection.
-
-### Kotlin Documentation
-I wanted to use documentation tooling on Kotlin on this project to get a feeling for Kotlin's documentation ecosystem.
-This project uses [dokka](https://github.com/Kotlin/dokka) to generate HTML documents similar to how Javadoc would.
-
-In documenting this project, I have found that dokka's results have been great.
-
-### Kotlin Testing
-Formerly, I had stuck to a testing framework that was familiar to me: jUnit. For this project I wanted to try the Kotlin
-testing frameworks [kotlintest](https://github.com/kotlintest/kotlintest) and [spek](https://github.com/spekframework/spek).
-
-So far, I like the fluency with which tests can be written.
